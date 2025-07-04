@@ -68,6 +68,34 @@ Product.belongsTo(Category, { foreignKey: 'categoryId' });
 Category.hasMany(Product, { foreignKey: 'categoryId' });
 Cart.belongsTo(Product, { foreignKey: 'productId', as: 'product' });
 
+const placeOrder = async (req, res) => {
+    try {
+        const userId = req.user.id; // Get userId from authenticated user
+        const { items, shippingAddress } = req.body;
+
+        // Create the order
+        const order = await Order.create({
+            userId,
+            shippingAddress: JSON.stringify(shippingAddress),
+            // ...other order fields...
+        });
+
+        // Create order items
+        for (const item of items) {
+            await OrderItem.create({
+                orderId: order.id,
+                productId: item.productId,
+                quantity: item.quantity,
+                // ...other fields if needed...
+            });
+        }
+
+        res.status(201).json({ message: 'Order placed successfully', order });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports = {
     sequelize,
     Product,

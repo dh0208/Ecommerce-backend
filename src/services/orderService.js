@@ -1,7 +1,7 @@
-const { Order, OrderItem } = require('../models');
+const { Order, OrderItem, Product, Category } = require('../models');
 
 module.exports = {
-  async createOrder(data) {
+  async createOrder(data, userId) {
     // Create the order
     const order = await Order.create({
       firstName: data.shippingAddress.firstName,
@@ -12,16 +12,23 @@ module.exports = {
       city: data.shippingAddress.city,
       state: data.shippingAddress.state,
       zip: data.shippingAddress.zipCode,
-      userId: data.shippingAddress.userId // Assuming userId is passed in the payload
+      userId // Use the userId from the controller, not from payload
     });
 
     // Create order items
     for (const item of data.items) {
+      // Fetch product and category info
+      const product = await Product.findByPk(item.productId);
+      const category = await Category.findByPk(product.categoryId);
+      console.log("product", product, "category", category);
+
       await OrderItem.create({
         orderId: order.id,
         productId: item.productId,
-        categoryId: item.categoryId,
-        price: item.price, // Make sure your frontend sends price
+        categoryId: product.categoryId,
+        categoryName: category.name,
+        userId, // from controller
+        price: product.price,
         quantity: item.quantity
       });
     }
